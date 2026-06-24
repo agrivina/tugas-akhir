@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    ::selection {
+        background: #7fffd4;
+        color: #004d4d;
+    }
+
+    ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgba(127, 255, 212, 0.25);
+        border-radius: 999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(127, 255, 212, 0.45);
+    }
+}
+
+@layer utilities {
+    .dot-grid {
+        background-image: radial-gradient(#008080 1px, transparent 0);
+        background-size: 28px 28px;
+    }
+
+    .gradient-text {
+        background: linear-gradient(135deg, #008080 0%, #40e0d0 50%, #7fffd4 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .blob {
+        filter: blur(90px);
+        border-radius: 9999px;
+        position: absolute;
+        pointer-events: none;
+    }
+
+    .pulse-dot {
+        position: relative;
+    }
+
+    .pulse-dot::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 9999px;
+        background: #008080;
+        animation: pulse-ring 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+}
+
+@media print {
+    .bg-white.rounded-xl {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .border.border-gray-100.rounded-lg {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    canvas {
+        max-width: 100% !important;
+    }
+
+    .shadow-sm {
+        box-shadow: none !important;
+    }
+
+    .border.border-gray-100.rounded-lg canvas {
+        height: 80px !important;
+        max-height: 80px !important;
+    }
+}
