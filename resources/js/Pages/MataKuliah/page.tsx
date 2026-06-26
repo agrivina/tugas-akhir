@@ -24,6 +24,18 @@ export default function MataKuliahIndex({ mataKuliahs }: { mataKuliahs: MataKuli
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const PER_PAGE = 10;
+
+    const filtered = mataKuliahs.filter((mk) =>
+        mk.kode_mk.toLowerCase().includes(search.toLowerCase()) ||
+        mk.nama_mk.toLowerCase().includes(search.toLowerCase())
+    );
+    const totalPages = Math.ceil(filtered.length / PER_PAGE);
+    const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+    const handleSearch = (val: string) => { setSearch(val); setPage(1); };
 
     const { data, setData, post, patch, reset, processing, errors, clearErrors } = useForm({
         kode_mk: '',
@@ -87,11 +99,23 @@ export default function MataKuliahIndex({ mataKuliahs }: { mataKuliahs: MataKuli
                     <h2 className="font-headline font-bold text-2xl text-gray-900">Mata Kuliah</h2>
                     <p className="text-gray-500 text-sm font-body mt-1">Kelola data pusaka mata kuliah prodi.</p>
                 </div>
-                {isKaprodi && (
-                    <button onClick={openAddModal} className="bg-polman-primary hover:bg-polman-secondary text-white px-5 py-2.5 rounded-lg font-bold shadow-sm transition-colors">
-                        + Tambah Mata Kuliah
-                    </button>
-                )}
+                <div className="flex items-center gap-3">
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base">search</span>
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            placeholder="Cari mata kuliah..."
+                            className="pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:outline-none focus:border-polman-primary w-56"
+                        />
+                    </div>
+                    {isKaprodi && (
+                        <button onClick={openAddModal} className="bg-polman-primary hover:bg-polman-secondary text-white px-5 py-2.5 rounded-lg font-bold shadow-sm transition-colors">
+                            + Tambah Mata Kuliah
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden font-body">
@@ -107,23 +131,21 @@ export default function MataKuliahIndex({ mataKuliahs }: { mataKuliahs: MataKuli
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {mataKuliahs.length === 0 ? (
-                            <tr><td colSpan={6} className="text-center py-8 text-gray-400">Belum ada data Mata Kuliah.</td></tr>
+                        {paginated.length === 0 ? (
+                            <tr><td colSpan={6} className="text-center py-8 text-gray-400">
+                                {search ? 'Tidak ada mata kuliah yang cocok.' : 'Belum ada data Mata Kuliah.'}
+                            </td></tr>
                         ) : (
-                            mataKuliahs.map((mk) => (
+                            paginated.map((mk) => (
                                 <tr key={mk.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 font-bold text-polman-primary">{mk.kode_mk}</td>
-                                    
                                     <td className="px-6 py-4 font-medium text-gray-800">
                                         {mk.nama_mk}
                                         <div className="text-xs text-gray-500 mt-1">{mk.jenis} • {mk.cara_pembelajaran}</div>
                                         {mk.prasyarat && (
-                                            <div className="text-xs text-red-500 mt-1 font-bold">
-                                                Prasyarat: {mk.prasyarat.nama_mk}
-                                            </div>
+                                            <div className="text-xs text-red-500 mt-1 font-bold">Prasyarat: {mk.prasyarat.nama_mk}</div>
                                         )}
                                     </td>
-
                                     <td className="px-6 py-4 text-center font-bold text-gray-600">{mk.semester || '-'}</td>
                                     <td className="px-6 py-4 text-center font-bold text-gray-600">{mk.sks}</td>
                                     <td className="px-6 py-4 text-center">
@@ -136,13 +158,11 @@ export default function MataKuliahIndex({ mataKuliahs }: { mataKuliahs: MataKuli
                                             <Link href={`/cpmk/mk/${mk.id}`} className="bg-polman-primary hover:bg-polman-secondary text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-colors">
                                                 Kelola CPMK
                                             </Link>
-                                            
                                             {isKaprodi && (
                                                 <Link href={`/mata-kuliah/${mk.id}/dosen-pengampu`} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-colors">
                                                     Kelola Dosen
                                                 </Link>
                                             )}
-                                            
                                             {isKaprodi && (
                                                 <>
                                                     <button onClick={() => openEditModal(mk)} className="text-blue-600 hover:text-blue-800 font-bold px-2 text-sm transition-colors">Edit</button>
@@ -156,6 +176,29 @@ export default function MataKuliahIndex({ mataKuliahs }: { mataKuliahs: MataKuli
                         )}
                     </tbody>
                 </table>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+                        <p className="text-xs text-gray-500 font-bold">Halaman {page} dari {totalPages} ({filtered.length} mata kuliah)</p>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setPage(page - 1)} disabled={page === 1}
+                                className="px-3 py-1.5 rounded-lg text-xs font-black border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-polman-primary hover:text-white hover:border-polman-primary transition-all">
+                                ← Prev
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                                <button key={p} onClick={() => setPage(p)}
+                                    className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${p === page ? 'bg-polman-primary text-white' : 'border border-gray-200 text-gray-500 hover:border-polman-primary hover:text-polman-primary'}`}>
+                                    {p}
+                                </button>
+                            ))}
+                            <button onClick={() => setPage(page + 1)} disabled={page === totalPages}
+                                className="px-3 py-1.5 rounded-lg text-xs font-black border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-polman-primary hover:text-white hover:border-polman-primary transition-all">
+                                Next →
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} className="relative z-50">

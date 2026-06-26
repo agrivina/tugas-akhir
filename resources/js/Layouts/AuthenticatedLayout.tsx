@@ -32,10 +32,11 @@ function MenuLink({ href, active, icon, children }: MenuLinkProps) {
     );
 }
 
-function SubMenuLink({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
+function SubMenuLink({ href, active, children, onClick }: { href: string; active: boolean; children: ReactNode; onClick?: () => void }) {
     return (
         <Link
             href={href}
+            onClick={onClick}
             className={`block py-2.5 text-xs font-bold transition-colors ${
                 active ? 'text-aqua-200' : 'text-white/40 hover:text-aqua-200'
             }`}
@@ -60,7 +61,7 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren<Prop
         currentUrl.startsWith('/cpmk') ||
         currentUrl.startsWith('/rps');
 
-    const isAsesmenActive = currentUrl.startsWith('/asesmen-cpl');
+    const isAsesmenActive = currentUrl.startsWith('/asesmen');
     const [isAsesmenFolderOpen, setIsAsesmenFolderOpen] = useState(isAsesmenActive);
     const [isMasterFolderOpen, setIsMasterFolderOpen] = useState(isMasterDataActive);
     const roleLabel = isKaprodi ? 'Kaprodi' : 'Dosen';

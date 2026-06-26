@@ -25,3 +25,5 @@ Homestead.yaml
 Thumbs.db
 API_DEBUG_SECRETS.md
 kurikulum-laravel/.env
+ngrok.exe
+.env.ngrok

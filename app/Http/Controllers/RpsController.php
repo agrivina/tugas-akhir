@@ -16,11 +16,20 @@ class RpsController extends Controller
 {
     public function index()
     {
-        $rps = Rps::with(['mataKuliah:id,kode_mk,nama_mk', 'penilaians', 'details'])->get();
+        $user = auth()->user();
+        $isDosen = $user->hasRole('Dosen');
+
+        $query = Rps::with(['mataKuliah:id,kode_mk,nama_mk', 'penilaians', 'details']);
+
+        // Dosen hanya lihat RPS miliknya sendiri
+        if ($isDosen && $user->dosen_biodata_id) {
+            $query->where('dosen_biodata_id', $user->dosen_biodata_id);
+        }
+
+        $rps = $query->get();
         
         $rps->each(function ($item) {
             if ($item->dosen_biodata_id) {
-                // 🔥 FIX: Pakai snake_case agar terbaca di page.tsx React
                 $item->dosen_biodata = DosenBiodata::find($item->dosen_biodata_id);
             }
         });
@@ -53,6 +62,7 @@ class RpsController extends Controller
                     'tte_kaprodi'        => $request->hasFile('tte_kaprodi') ? $request->file('tte_kaprodi')->store('rps_tte', 'public') : null,
                     'tte_kajur'          => $request->hasFile('tte_kajur') ? $request->file('tte_kajur')->store('rps_tte', 'public') : null,
                     'kode_dokumen'       => $validated['kode_dokumen'],
+                    'komponen_labels'    => json_encode($validated['komponen_labels'] ?? \App\Models\Rps::defaultKomponenLabels()),
                 ]);
 
                 $rps->penilaians()->createMany($validated['penilaians']);
@@ -82,6 +92,7 @@ class RpsController extends Controller
                     'pustaka_pendukung'  => $validated['pustaka_pendukung'] ?? null,
                     'bahan_kajian_utama' => $validated['bahan_kajian_utama'],
                     'kode_dokumen'       => $validated['kode_dokumen'],
+                    'komponen_labels'    => json_encode($validated['komponen_labels'] ?? \App\Models\Rps::defaultKomponenLabels()),
                 ];
 
                 // Cek dan ganti masing-masing TTE jika ada file baru
@@ -141,6 +152,12 @@ class RpsController extends Controller
             'tte_kaprodi'        => "nullable|file|mimes:png,jpg,jpeg,pdf|max:2048",
             'tte_kajur'          => "nullable|file|mimes:png,jpg,jpeg,pdf|max:2048",
             'kode_dokumen'       => 'required|string',
+            'komponen_labels'          => 'nullable|array',
+            'komponen_labels.quiz'     => 'nullable|string|max:50',
+            'komponen_labels.tugas'    => 'nullable|string|max:50',
+            'komponen_labels.project'  => 'nullable|string|max:50',
+            'komponen_labels.uts'      => 'nullable|string|max:50',
+            'komponen_labels.uas'      => 'nullable|string|max:50',
             
             'penilaians'           => 'required|array',
             'penilaians.*.cpmk_id' => 'required|exists:cpmks,id',

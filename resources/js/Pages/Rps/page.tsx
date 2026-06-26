@@ -111,9 +111,20 @@ export default function RpsIndex({ rps, mataKuliahs, allDosen }: { rps: Rps[], m
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [cpmks, setCpmks] = useState<CPMK[]>([]);
     const [dosenPengampuMk, setDosenPengampuMk] = useState<DosenBiodata[]>([]);
-    
-    // State khusus untuk Modal Delete yang Estetik
     const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const PER_PAGE = 10;
+
+    const filtered = rps.filter((item) =>
+        item.mata_kuliah?.kode_mk.toLowerCase().includes(search.toLowerCase()) ||
+        item.mata_kuliah?.nama_mk.toLowerCase().includes(search.toLowerCase()) ||
+        (item.dosen_biodata ? dosenFullName(item.dosen_biodata).toLowerCase().includes(search.toLowerCase()) : false) ||
+        item.tahun_akademik.includes(search)
+    );
+    const totalPages = Math.ceil(filtered.length / PER_PAGE);
+    const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+    const handleSearch = (val: string) => { setSearch(val); setPage(1); };
 
     const { data, setData, post, reset, processing, errors, clearErrors } = useForm({
         mata_kuliah_id: '',
@@ -126,7 +137,14 @@ export default function RpsIndex({ rps, mataKuliahs, allDosen }: { rps: Rps[], m
         bahan_kajian_utama: '', 
         tte_dosen: null as File | null,     
         tte_kaprodi: null as File | null,   
-        tte_kajur: null as File | null,     
+        tte_kajur: null as File | null,
+        komponen_labels: {
+            quiz: 'Quiz',
+            tugas: 'Tugas',
+            project: 'Project',
+            uts: 'UTS',
+            uas: 'UAS',
+        } as Record<string, string>,
         penilaians: [] as any[],
         details: [{ pertemuan_ke: '', kemampuan_akhir: '', indikator: '', bahan_kajian: '', metode_pembelajaran: '', estimasi_waktu: '', pengalaman_belajar: '', penilaian_komponen: '', penilaian_bobot: 0 }],
         _method: 'POST'
@@ -156,7 +174,23 @@ export default function RpsIndex({ rps, mataKuliahs, allDosen }: { rps: Rps[], m
         clearErrors();
         setCpmks([]);
         setDosenPengampuMk([]);
-        setData('_method', 'POST');
+        setData({
+            mata_kuliah_id: '',
+            dosen_biodata_id: '',
+            tahun_akademik: '',
+            kode_dokumen: '',
+            tanggal_penyusunan: new Date().toISOString().split('T')[0],
+            pustaka_utama: '',
+            pustaka_pendukung: '',
+            bahan_kajian_utama: '',
+            tte_dosen: null,
+            tte_kaprodi: null,
+            tte_kajur: null,
+            komponen_labels: { quiz: 'Quiz', tugas: 'Tugas', project: 'Project', uts: 'UTS', uas: 'UAS' },
+            penilaians: [],
+            details: [{ pertemuan_ke: '', kemampuan_akhir: '', indikator: '', bahan_kajian: '', metode_pembelajaran: '', estimasi_waktu: '', pengalaman_belajar: '', penilaian_komponen: '', penilaian_bobot: 0 }],
+            _method: 'POST'
+        });
         setIsModalOpen(true);
     };
 
@@ -198,6 +232,7 @@ export default function RpsIndex({ rps, mataKuliahs, allDosen }: { rps: Rps[], m
             tte_dosen: null,   
             tte_kaprodi: null,
             tte_kajur: null,
+            komponen_labels: (item as any).komponen_labels || { quiz: 'Quiz', tugas: 'Tugas', project: 'Project', uts: 'UTS', uas: 'UAS' },
             penilaians: loadedPenilaians,
             details: (item.details && item.details.length > 0) 
                      ? item.details 
@@ -267,9 +302,21 @@ export default function RpsIndex({ rps, mataKuliahs, allDosen }: { rps: Rps[], m
                     <h2 className="font-headline font-bold text-2xl text-gray-900">Rencana Pembelajaran Semester</h2>
                     <p className="text-gray-500 text-sm font-body mt-1">Kelola dokumen RPS Mata Kuliah.</p>
                 </div>
-                <button onClick={openAddModal} className="bg-polman-primary hover:bg-polman-secondary text-white px-5 py-2.5 rounded-lg font-bold shadow-sm transition-colors">
-                    + Tambah RPS
-                </button>
+                <div className="flex items-center gap-3">
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base">search</span>
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            placeholder="Cari RPS, dosen..."
+                            className="pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:outline-none focus:border-polman-primary w-52"
+                        />
+                    </div>
+                    <button onClick={openAddModal} className="bg-polman-primary hover:bg-polman-secondary text-white px-5 py-2.5 rounded-lg font-bold shadow-sm transition-colors">
+                        + Tambah RPS
+                    </button>
+                </div>
             </div>
 
             {/* TABEL LIST RPS */}
@@ -284,10 +331,12 @@ export default function RpsIndex({ rps, mataKuliahs, allDosen }: { rps: Rps[], m
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {rps.length === 0 ? (
-                            <tr><td colSpan={4} className="text-center py-8 text-gray-400">Belum ada dokumen RPS.</td></tr>
+                        {paginated.length === 0 ? (
+                            <tr><td colSpan={4} className="text-center py-8 text-gray-400">
+                                {search ? 'Tidak ada RPS yang cocok.' : 'Belum ada dokumen RPS.'}
+                            </td></tr>
                         ) : (
-                            rps.map((item) => (
+                            paginated.map((item) => (
                                 <tr key={item.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4">
                                         <div className="font-bold text-polman-primary">{item.mata_kuliah?.kode_mk}</div>
@@ -300,7 +349,6 @@ export default function RpsIndex({ rps, mataKuliahs, allDosen }: { rps: Rps[], m
                                     <td className="px-6 py-4 font-medium text-gray-800">{item.dosen_biodata ? dosenFullName(item.dosen_biodata) : '-'}</td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-3">
-                                            {/* TOMBOL PRINT KE RUTE PDF */}
                                             <a href={route('rps.pdf', item.id)} target="_blank" rel="noreferrer" className="text-gray-600 hover:text-gray-900 font-bold px-2 text-sm transition-colors">Print</a>
                                             <button onClick={() => openEditModal(item)} className="text-blue-600 hover:text-blue-800 font-bold px-2 text-sm transition-colors">Edit</button>
                                             <button onClick={() => setDeleteId(item.id)} className="text-red-500 hover:text-red-700 font-bold px-2 text-sm transition-colors">Hapus</button>
@@ -311,6 +359,29 @@ export default function RpsIndex({ rps, mataKuliahs, allDosen }: { rps: Rps[], m
                         )}
                     </tbody>
                 </table>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+                        <p className="text-xs text-gray-500 font-bold">Halaman {page} dari {totalPages} ({filtered.length} RPS)</p>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setPage(page - 1)} disabled={page === 1}
+                                className="px-3 py-1.5 rounded-lg text-xs font-black border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-polman-primary hover:text-white hover:border-polman-primary transition-all">
+                                ← Prev
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                                <button key={p} onClick={() => setPage(p)}
+                                    className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${p === page ? 'bg-polman-primary text-white' : 'border border-gray-200 text-gray-500 hover:border-polman-primary hover:text-polman-primary'}`}>
+                                    {p}
+                                </button>
+                            ))}
+                            <button onClick={() => setPage(page + 1)} disabled={page === totalPages}
+                                className="px-3 py-1.5 rounded-lg text-xs font-black border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-polman-primary hover:text-white hover:border-polman-primary transition-all">
+                                Next →
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* MODAL KONFIRMASI HAPUS (ESTETIK) */}
@@ -356,7 +427,15 @@ export default function RpsIndex({ rps, mataKuliahs, allDosen }: { rps: Rps[], m
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-1">Tahun Akademik</label>
-                                    <input type="text" placeholder="Cth: 2021/2022" className="w-full border-gray-300 rounded text-sm" value={data.tahun_akademik} onChange={e => setData('tahun_akademik', e.target.value)} required />
+                                    <select className="w-full border-gray-300 rounded text-sm" value={data.tahun_akademik} onChange={e => setData('tahun_akademik', e.target.value)} required>
+                                        <option value="">-- Pilih Tahun Akademik --</option>
+                                        {Array.from({ length: new Date().getFullYear() + 4 - 2020 }, (_, i) => {
+                                            const start = 2020 + i;
+                                            return `${start}/${start + 1}`;
+                                        }).map(tahun => (
+                                            <option key={tahun} value={tahun}>{tahun}</option>
+                                        ))}
+                                    </select>
                                     {errors.tahun_akademik && <span className="text-red-500 text-xs">{errors.tahun_akademik}</span>}
                                 </div>
                                 <div>
@@ -428,13 +507,45 @@ export default function RpsIndex({ rps, mataKuliahs, allDosen }: { rps: Rps[], m
                                 </div>
                             </div>
 
+                            {/* KUSTOMISASI NAMA KOMPONEN PENILAIAN */}
+                            {data.mata_kuliah_id && (
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2 border-b pb-1">
+                                        Nama Komponen Penilaian
+                                        <span className="text-xs font-normal text-gray-400 ml-2">Sesuaikan nama komponen sesuai MK ini</span>
+                                    </label>
+                                    <div className="grid grid-cols-5 gap-3 bg-blue-50 border border-blue-100 rounded-lg p-4">
+                                        {(['quiz', 'tugas', 'project', 'uts', 'uas'] as const).map((key) => (
+                                            <div key={key}>
+                                                <label className="block text-[11px] font-bold text-blue-600 mb-1 uppercase">{key}</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full border-gray-300 rounded text-sm"
+                                                    value={data.komponen_labels[key] || ''}
+                                                    onChange={e => setData('komponen_labels', { ...data.komponen_labels, [key]: e.target.value })}
+                                                    placeholder={key.toUpperCase()}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-1 italic">
+                                        Contoh: untuk MK Praktik, ganti "Quiz" → "Sikap", "Tugas" → "Laporan", "Project" → "Ujian", "UTS" → "-" (isi 0)
+                                    </p>
+                                </div>
+                            )}
+
                             {/* MATRIKS PENILAIAN */}
                             {cpmks.length > 0 && (
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-2 border-b pb-1">Sistem Evaluasi (Bobot % per CPMK)</label>
                                     <table className="w-full text-sm border">
                                         <thead className="bg-gray-50">
-                                            <tr><th className="border p-2">CPMK</th><th className="border p-2">Quiz</th><th className="border p-2">Tugas</th><th className="border p-2">Project</th><th className="border p-2">UTS</th><th className="border p-2">UAS</th></tr>
+                                            <tr>
+                                                <th className="border p-2">CPMK</th>
+                                                {(['quiz', 'tugas', 'project', 'uts', 'uas'] as const).map(key => (
+                                                    <th key={key} className="border p-2">{data.komponen_labels[key] || key.toUpperCase()}</th>
+                                                ))}
+                                            </tr>
                                         </thead>
                                         <tbody>
                                             {data.penilaians.map((penilaian, idx) => (

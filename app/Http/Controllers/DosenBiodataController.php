@@ -53,17 +53,12 @@ class DosenBiodataController extends Controller
 
     public function destroy(DosenBiodata $dosenBiodata)
     {
-        $userExists = \App\Models\User::where('dosen_biodata_id', $dosenBiodata->id)->exists();
-        
-        if ($userExists) {
-            return redirect()->back()->withErrors([
-                'biodata' => 'Biodata dosen tidak dapat dihapus karena sudah terhubung ke akun dosen.',
-            ]);
-        }
+        // Hapus akun user yang terhubung ke biodata ini sekalian
+        \App\Models\User::where('dosen_biodata_id', $dosenBiodata->id)->delete();
 
         $dosenBiodata->delete();
 
-        return redirect()->back()->with('success', 'Biodata dosen berhasil dihapus.');
+        return redirect()->back()->with('success', 'Biodata dan akun dosen berhasil dihapus.');
     }
     private function normalizeEmptyToNull(?string $value): ?string
     {

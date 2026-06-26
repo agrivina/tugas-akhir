@@ -180,12 +180,13 @@
     @if($rps->penilaians->count() > 0)
     @php
         $labels = $rps->penilaians->map(fn($p) => $p->cpmk->kode_cpmk ?? 'N/A')->toArray();
+        $kl = $rps->komponen_labels; // custom labels
         $datasets = [
-            ['label' => 'Quiz', 'data' => $rps->penilaians->pluck('quiz')->map(fn($v) => (float)$v)->toArray(), 'borderColor' => '#3b82f6', 'backgroundColor' => 'rgba(59,130,246,0.1)'],
-            ['label' => 'Tugas', 'data' => $rps->penilaians->pluck('tugas')->map(fn($v) => (float)$v)->toArray(), 'borderColor' => '#10b981', 'backgroundColor' => 'rgba(16,185,129,0.1)'],
-            ['label' => 'Project', 'data' => $rps->penilaians->pluck('project')->map(fn($v) => (float)$v)->toArray(), 'borderColor' => '#f59e0b', 'backgroundColor' => 'rgba(245,158,11,0.1)'],
-            ['label' => 'UTS', 'data' => $rps->penilaians->pluck('uts')->map(fn($v) => (float)$v)->toArray(), 'borderColor' => '#8b5cf6', 'backgroundColor' => 'rgba(139,92,246,0.1)'],
-            ['label' => 'UAS', 'data' => $rps->penilaians->pluck('uas')->map(fn($v) => (float)$v)->toArray(), 'borderColor' => '#ef4444', 'backgroundColor' => 'rgba(239,68,68,0.1)'],
+            ['label' => $kl['quiz'] ?? 'Quiz', 'data' => $rps->penilaians->pluck('quiz')->map(fn($v) => (float)$v)->toArray(), 'borderColor' => '#3b82f6', 'backgroundColor' => 'rgba(59,130,246,0.1)'],
+            ['label' => $kl['tugas'] ?? 'Tugas', 'data' => $rps->penilaians->pluck('tugas')->map(fn($v) => (float)$v)->toArray(), 'borderColor' => '#10b981', 'backgroundColor' => 'rgba(16,185,129,0.1)'],
+            ['label' => $kl['project'] ?? 'Project', 'data' => $rps->penilaians->pluck('project')->map(fn($v) => (float)$v)->toArray(), 'borderColor' => '#f59e0b', 'backgroundColor' => 'rgba(245,158,11,0.1)'],
+            ['label' => $kl['uts'] ?? 'UTS', 'data' => $rps->penilaians->pluck('uts')->map(fn($v) => (float)$v)->toArray(), 'borderColor' => '#8b5cf6', 'backgroundColor' => 'rgba(139,92,246,0.1)'],
+            ['label' => $kl['uas'] ?? 'UAS', 'data' => $rps->penilaians->pluck('uas')->map(fn($v) => (float)$v)->toArray(), 'borderColor' => '#ef4444', 'backgroundColor' => 'rgba(239,68,68,0.1)'],
         ];
 
         $allValues = collect($datasets)->flatMap(fn($ds) => $ds['data'])->filter(fn($v) => $v > 0);
@@ -216,11 +217,11 @@
             </td>
         </tr>
         <tr class="text-center font-bold bg-gray">
-            <td width="9%">Quiz</td>
-            <td width="9%">Tugas</td>
-            <td width="9%">Project</td>
-            <td width="9%">UTS</td>
-            <td width="9%">UAS</td>
+            <td width="9%">{{ $kl['quiz'] ?? 'Quiz' }}</td>
+            <td width="9%">{{ $kl['tugas'] ?? 'Tugas' }}</td>
+            <td width="9%">{{ $kl['project'] ?? 'Project' }}</td>
+            <td width="9%">{{ $kl['uts'] ?? 'UTS' }}</td>
+            <td width="9%">{{ $kl['uas'] ?? 'UAS' }}</td>
         </tr>
         
         @php

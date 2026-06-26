@@ -79,14 +79,23 @@ export default function DosenBiodataPage({ biodatas }: { biodatas: DosenBiodata[
         setIsModalOpen(true);
     };
 
+    const handleDelete = (biodata: DosenBiodata) => {
+        const namaLengkap = fullName(biodata);
+        const pesanKonfirmasi = biodata.user
+            ? `Hapus biodata dan akun login milik ${namaLengkap}? Dosen tidak akan bisa login lagi.`
+            : `Hapus biodata ${namaLengkap}?`;
+
+        if (confirm(pesanKonfirmasi)) {
+            router.delete(route('biodata-dosen.destroy', biodata.id));
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
         if (modalMode === 'add') {
             post(route('biodata-dosen.store'), { onSuccess: () => setIsModalOpen(false) });
             return;
         }
-
         if (selectedId) {
             patch(route('biodata-dosen.update', selectedId), { onSuccess: () => setIsModalOpen(false) });
         }
@@ -100,7 +109,9 @@ export default function DosenBiodataPage({ biodatas }: { biodatas: DosenBiodata[
                 <div>
                     <h2 className="font-headline font-bold text-2xl text-gray-900">Biodata Dosen</h2>
                     <p className="text-gray-500 text-sm font-body mt-1">
-                        {isKaprodi ? 'Kelola master biodata dosen sebelum membuat akun login dosen.' : 'Data biodata dosen prodi.'}
+                        {isKaprodi
+                            ? 'Daftar biodata dosen yang telah mendaftar dan melengkapi profil mereka.'
+                            : 'Data biodata dosen prodi.'}
                     </p>
                 </div>
                 {isKaprodi && (
@@ -110,7 +121,11 @@ export default function DosenBiodataPage({ biodatas }: { biodatas: DosenBiodata[
                 )}
             </div>
 
-            {biodataError && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{biodataError}</div>}
+            {biodataError && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                    {biodataError}
+                </div>
+            )}
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden font-body">
                 <div className="overflow-x-auto">
@@ -127,7 +142,11 @@ export default function DosenBiodataPage({ biodatas }: { biodatas: DosenBiodata[
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {biodatas.length === 0 ? (
-                                <tr><td colSpan={6} className="text-center py-8 text-gray-400">Belum ada biodata dosen.</td></tr>
+                                <tr>
+                                    <td colSpan={6} className="text-center py-8 text-gray-400">
+                                        Belum ada biodata dosen.
+                                    </td>
+                                </tr>
                             ) : biodatas.map((biodata) => (
                                 <tr key={biodata.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4">
@@ -148,22 +167,24 @@ export default function DosenBiodataPage({ biodatas }: { biodatas: DosenBiodata[
                                             {biodata.user ? 'Sudah Ada Akun' : 'Belum Ada Akun'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-3">
-                                            {isKaprodi && (
-                                                <button onClick={() => openEditModal(biodata)} className="text-blue-600 hover:text-blue-800 font-bold px-2 text-sm transition-colors">Edit</button>
-                                            )}
-                                            {isKaprodi && (
+                                    {isKaprodi && (
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-3">
                                                 <button
-                                                onClick={() => { if (confirm(`Hapus biodata ${biodata.nama_lengkap}?`)) router.delete(route('biodata-dosen.destroy', biodata.id)); }}
-                                                disabled={Boolean(biodata.user)}
-                                                className={`font-bold px-2 text-sm transition-colors ${biodata.user ? 'text-gray-300 cursor-not-allowed' : 'text-red-500 hover:text-red-700'}`}
+                                                    onClick={() => openEditModal(biodata)}
+                                                    className="text-blue-600 hover:text-blue-800 font-bold px-2 text-sm transition-colors"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(biodata)}
+                                                    className="text-red-500 hover:text-red-700 font-bold px-2 text-sm transition-colors"
                                                 >
                                                     Hapus
                                                 </button>
-                                            )}
-                                        </div>
-                                    </td>
+                                            </div>
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>
@@ -175,7 +196,9 @@ export default function DosenBiodataPage({ biodatas }: { biodatas: DosenBiodata[
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
                 <div className="fixed inset-0 flex items-center justify-center p-4">
                     <Dialog.Panel className="bg-white p-6 rounded-2xl w-full max-w-3xl shadow-2xl font-body overflow-y-auto max-h-[90vh]">
-                        <Dialog.Title className="text-xl font-bold text-gray-900 mb-4">{modalMode === 'add' ? 'Tambah Biodata Dosen' : 'Edit Biodata Dosen'}</Dialog.Title>
+                        <Dialog.Title className="text-xl font-bold text-gray-900 mb-4">
+                            {modalMode === 'add' ? 'Tambah Biodata Dosen' : 'Edit Biodata Dosen'}
+                        </Dialog.Title>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <Field label="Gelar Depan" value={data.gelar_depan} onChange={(value) => setData('gelar_depan', value)} />
@@ -190,7 +213,9 @@ export default function DosenBiodataPage({ biodatas }: { biodatas: DosenBiodata[
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <Field label="No HP" value={data.no_hp} onChange={(value) => setData('no_hp', value)} />
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Prodi <span className="text-red-500">*</span></label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">
+                                        Prodi <span className="text-red-500">*</span>
+                                    </label>
                                     <select className="w-full border-gray-300 rounded-lg text-sm" value={data.prodi} onChange={e => setData('prodi', e.target.value)} required>
                                         <option value="Teknologi Rekayasa Informatika Industri">Teknologi Rekayasa Informatika Industri</option>
                                         <option value="Teknologi Rekayasa Otomasi">Teknologi Rekayasa Otomasi</option>
@@ -204,8 +229,12 @@ export default function DosenBiodataPage({ biodatas }: { biodatas: DosenBiodata[
                             <TextArea label="Bidang Keahlian" value={data.bidang_keahlian} onChange={(value) => setData('bidang_keahlian', value)} />
                             <TextArea label="Alamat" value={data.alamat} onChange={(value) => setData('alamat', value)} />
                             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-lg">Batal</button>
-                                <button type="submit" className="bg-polman-primary hover:bg-polman-secondary text-white px-5 py-2 rounded-lg text-sm font-bold shadow-sm" disabled={processing}>{processing ? 'Menyimpan...' : 'Simpan Data'}</button>
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-lg">
+                                    Batal
+                                </button>
+                                <button type="submit" className="bg-polman-primary hover:bg-polman-secondary text-white px-5 py-2 rounded-lg text-sm font-bold shadow-sm" disabled={processing}>
+                                    {processing ? 'Menyimpan...' : 'Simpan Data'}
+                                </button>
                             </div>
                         </form>
                     </Dialog.Panel>
@@ -215,11 +244,15 @@ export default function DosenBiodataPage({ biodatas }: { biodatas: DosenBiodata[
     );
 }
 
-
-function Field({ label, value, onChange, type = 'text', required = false, error }: { label: string; value: string; onChange: (value: string) => void; type?: string; required?: boolean; error?: string }) {
+function Field({ label, value, onChange, type = 'text', required = false, error }: {
+    label: string; value: string; onChange: (value: string) => void;
+    type?: string; required?: boolean; error?: string;
+}) {
     return (
         <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">{label} {required && <span className="text-red-500">*</span>}</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+                {label} {required && <span className="text-red-500">*</span>}
+            </label>
             <input type={type} className="w-full border-gray-300 rounded-lg text-sm" value={value} onChange={e => onChange(e.target.value)} required={required} />
             {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
         </div>

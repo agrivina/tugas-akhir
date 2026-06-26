@@ -9,8 +9,30 @@ class Rps extends Model
 protected $fillable = [
     'mata_kuliah_id', 'dosen_biodata_id', 'tahun_akademik', 'kode_dokumen',
     'tanggal_penyusunan', 'pustaka_utama', 'pustaka_pendukung', 
-    'bahan_kajian_utama', 'tte_dosen', 'tte_kaprodi', 'tte_kajur'
+    'bahan_kajian_utama', 'tte_dosen', 'tte_kaprodi', 'tte_kajur',
+    'komponen_labels',
 ];
+
+protected $casts = [];
+
+// Default label komponen jika belum dikustomisasi
+public static function defaultKomponenLabels(): array
+{
+    return [
+        'quiz'    => 'Quiz',
+        'tugas'   => 'Tugas',
+        'project' => 'Project',
+        'uts'     => 'UTS',
+        'uas'     => 'UAS',
+    ];
+}
+
+public function getKomponenLabelsAttribute($value): array
+{
+    if (!$value) return self::defaultKomponenLabels();
+    $decoded = json_decode($value, true);
+    return is_array($decoded) ? $decoded : self::defaultKomponenLabels();
+}
 
     public function mataKuliah()
     {
